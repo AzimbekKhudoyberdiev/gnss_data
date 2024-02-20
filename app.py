@@ -1,34 +1,36 @@
 from flask import Flask, jsonify
-import pandas as pd
-import numpy as np
+import csv
 
 app = Flask(__name__)
-
 
 datasets_info = [
     {"taskID": "task1", "file_path": "dataset_example.csv", "description": "All datasets"},
     {"taskID": "task2", "file_path": "school_gt.csv", "description": "Ground Truth Data"},
-    #{"taskID": "task3", "file_path": "path_to_ground_truth_data.csv", "description": "Ground Truth Data"},
     # Add more datasets with their respective taskID and descriptions here
 ]
 
 def load_dataset(dataset_info):
-    df = pd.read_csv(dataset_info["file_path"])
-    
-    # For numeric columns, replace NaN with a numeric placeholder (e.g., 0) or convert to string
-    numeric_columns = df.select_dtypes(include=[np.number]).columns
-    df[numeric_columns] = df[numeric_columns].fillna(0)  # or use np.nan if you prefer to keep NaN
-    
-    # For string columns, replace NaN with empty strings
-    string_columns = df.select_dtypes(include=[object]).columns
-    df[string_columns] = df[string_columns].fillna('')
-    
+    # Initialize an empty list to store the dataset records
+    data = []
+
+    # Open the CSV file and read data
+    with open(dataset_info["file_path"], mode='r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        
+        # Iterate over each row in the CSV file and add it to the data list
+        for row in reader:
+            # Manually handle missing values if necessary
+            for key, value in row.items():
+                if value == '':
+                    row[key] = None  # Replace empty strings with None or a suitable placeholder
+            data.append(row)
+
     return {
         "taskID": dataset_info["taskID"],
         "description": dataset_info["description"],
-        "data": df.to_dict(orient='records')
+        "data": data
     }
-    
+
 # Function to load all datasets
 def load_all_datasets():
     return [load_dataset(info) for info in datasets_info]
